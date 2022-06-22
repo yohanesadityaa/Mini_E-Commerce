@@ -15,7 +15,6 @@ module.exports = {
     const hashPassword = bcrypt.hashSync('admin321', bcrypt.genSaltSync(10))
 
     await queryInterface.bulkInsert('Users', [{
-      id :1,
       username : 'ADMIN',
       email : 'admin@gmail.com',
       password : hashPassword,

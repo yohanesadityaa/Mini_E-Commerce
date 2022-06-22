@@ -1,10 +1,10 @@
 const jwt = require('jsonwebtoken')
 const privatekey = "helloworld"
-const Roles = require("../models/index").Role;
+const Role = require('../models').Role;
 
 const verify = (req, res, next) => {
     
-    const token = req.headers["authentication"]
+    const token = req.headers["authentication"];
     jwt.verify(token, privatekey, (err, decoded) => {
         if(err){
             return res.status(403).send({
@@ -25,7 +25,7 @@ const generateToken = ( payload ) => {
 }
 
 const verifyAdmin = async (req, res, next) => {
-	const token = req.headers["auth"];
+	const token = req.headers["authentication"];
 
 	if (token === undefined) {
 		return res.status(401).send({
@@ -33,22 +33,21 @@ const verifyAdmin = async (req, res, next) => {
 		});
 	}
 
-	jwt.verify(token, privateKey, async (err, decoded) => {
+	jwt.verify(token, privatekey, async (err, decoded) => {
 		const id = decoded.id;
 		console.log("user_id", id);
-		const userRole = await Roles.findOne({
+		const userRole = await Role.findOne({
 			where: {
 				user_id: id,
 			},
 		});
 		console.log("Role: ", userRole);
-		if (userRole === null || userRole.role !== "ADMIN") {
+		if (userRole === null || userRole.Role !== 'Admin') {
 			return res.status(401).send({
 				err: "Forbidden, Only admin can Access",
 			});
 		}
-
-		next();
+		next()
 	});
 };
 module.exports = {

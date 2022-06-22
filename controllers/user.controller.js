@@ -1,97 +1,97 @@
-const User = require("../models/index").User;
-const Role = require("../models/index").Role;
-const { generate } = require("../middleware/authentication");
-const bcrypt = require("bcrypt");
+const bcrypt = require('bcrypt')
+const { User } = require('../models/index')
+const { Role} = require('../models/index')
+const{generateToken} = require('../middlewares/authentication')
 
-const signIn = async (req, res, next) => {
-	try {
-		const email = req.body.email;
-		const password = req.body.password;
-
-		User.findOne({ where: 
-            { 
-                email: email 
-            } 
-        }).then((user) => {
-			if (!user) {
-				return res.status(400).send({
-					error: "ERROR",
-					message: "User not found",
-				});
-			}
-
-			const isValid = bcrypt.compareSync(password, user.password);
-
-			if (!isValid) {
-				return res.status(400).send({
-					error: "ERROR",
-					message: "Username and password not match",
-				});
-			}
-
-			res.status(200).send({
-				status: "SUCCESS",
-				message: "Login success",
-				token: generate({
-					id: user.id,
-					username : user.username,
-					email: user.email,
-				}),
-			});
-		});
-	} catch (err) {
-		next(err);
-	}
-};
-
-const signUp = async (req, res, next) => {
-	try {
-		// validasi
-		const email = req.body.email;
-		const username = req.body.username;
-		const password = req.body.password;
-
-		console.log(email);
-
-		User.findOne({ where: { email: email } }).then((user) => {
-			if (user) {
-				return res.status(400).send({
-					error: "USER_FAILED_REGISTER",
-					message: "Username Already Exists",
-				});
-			}
-
-			bcrypt.hash(password, 10, function (err, hash) {
-				// Store hash in your password DB.
-				return User.create({
-					username: username,
-					email: email,
-					password: hash,
-				})
-					.then((user) => {
-						return Role.create({
-							user_id: user.id,
-							role: "USER",
-						});
-					})
-					.then((user) => {
-						res.status(200).send({
-							status: "SUCCESS",
-							message: "Register is Success",
-							token: generate({
-								id: user.id,
-								username : user.username,
-								email: user.email,
-							}),
-						});
-					});
-			});
-		});
-	} catch (err) {
-		next(err);
-	}
-};
-module.exports = { 
-    signIn, 
-    signUp 
-};
+const signUp = async (req, res) => {
+    const username = req.body.username
+    const email = req.body.email
+    const password =req.body.password
+  
+    User.findOne({
+    where : {
+        email:email
+    }
+    }).then( user => {
+        if( user ) {
+            return res.status(400). send({
+                message: "Email Already Exists"
+             })
+    }
+        const hashPassword = bcrypt.hashSync(password, bcrypt.genSaltSync(10))
+        
+        User.create({
+             username : username,
+             email: email,
+             password: hashPassword
+             }).then(user => {
+                res.status(200).send({
+                      message: "User berhasil dibuat",
+                      data : user
+                    })
+        Role.create({
+            user_id :user.id,
+			Role : "User"
+        }).then(role=> {
+            res.status(200).send({
+			message: "User dan Roles berhasil dibuat",
+			data : role
+        })
+    })	
+}).catch(e => {
+    res.status(500).send({
+        status: "Internal Server Error",
+        message : e
+    })
+})
+})}
+const signIn = async (req, res) => {
+    const body = req.body 
+    const email = body.email
+    const password = body.password
+    
+    User.findOne({
+        where: {
+            email: email
+        }
+    }).then(user => {
+        if(!user) {
+            return res.status(400). send({
+                message: "Email Not Found"
+            })
+        }
+        const isValidPassword = bcrypt.compareSync(password, user.password);
+        
+        if(!isValidPassword) {
+            return res.status(400). send({
+                message: "Password is not match"
+            })
+        }
+        const token = generateToken({
+            id: user.id,
+            email: user.email,
+            username : user.username,
+        });
+        
+        return res.status(200).send({
+            status: "Succes",
+            message : "User Login success",
+            data : {
+                id: user.id,
+                email: user.email,
+                username : user.username,
+                token: token
+            }
+        })
+    }).catch(e=> {
+        console.log(e)
+        return res.status(500). send({
+            message: "Internal server Error"
+        })
+    })
+}
+                                    
+module.exports = {
+    signUp,
+    signIn
+ }

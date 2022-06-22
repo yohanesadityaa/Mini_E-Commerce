@@ -1,4 +1,4 @@
-const Balance = require('../models')
+const {Balance} = require('../models')
 
 const Topup = async (req, res) => {
     const user_id = req.body.user_id
@@ -21,6 +21,7 @@ const Topup = async (req, res) => {
         })
     })
 }
+
 module.exports = {
     Topup
 }
